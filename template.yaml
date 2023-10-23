@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  recog-code-challenge
+
+  Super Smart Medical Assistant
+
+Globals: # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html
+  Function:
+    Timeout: 30
+    MemorySize: 128
+    Runtime: python3.11
+
+Resources:
+  SmartMedicalAssistantFunction:
+    Type: AWS::Serverless::Function     # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: .
+      Description: Super Smart Medical Assistant Lambda
+      Architectures:
+      - x86_64
+      Tracing: Active
+      Events:
+        AnyApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: SmartMedicalAssistant
+          POWERTOOLS_METRICS_NAMESPACE: SmartMedicalAssistant
+          LOG_LEVEL: INFO
+          OPENAI_API_KEY : !Sub '{{resolve:ssm:OPENAI_API_KEY:1}}'
+          
+      Tags:
+        LambdaPowertools: python
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+Outputs:
+  SuperSmartMedicalAssistantApi:
+    Description: API Gateway endpoint URL for Prod environment for smart medical assistant
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  SuperSmartMedicalAssistantFunction:
+    Description: Super Smart Medical Assistant Lambda Function ARN
+    Value: !GetAtt SmartMedicalAssistantFunction.Arn
+

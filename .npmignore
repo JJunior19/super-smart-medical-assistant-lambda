@@ -1,0 +1,14 @@
+
+test/
+__pycache__
+events/
+.tox
+.venv
+.vscode
+htmlcov/
+.gitignore
+.npmignore
+coverage.xml
+env.json
+env.json.example
+tox.ini
